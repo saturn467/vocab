@@ -9,3 +9,10 @@ build/
 .venv/
 venv/
 catalog_seed.json
+catalog_enriched.json
+
+# Enrichment runtime artefacts
+enrichment/audio/
+enrichment/images/
+enrichment/.enrichment_checkpoint.json
+enrichment/.env
