@@ -77,34 +77,39 @@ log = logging.getLogger("enrich")
 #  HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
-def load_cards(path: Path) -> list[dict[str, Any]]:
-    """Load card objects from a JSON file (array or ``{"cards": [...]}``)."""
+def load_catalog(path: Path) -> dict[str, Any]:
+    """Load the full catalog JSON.
+
+    Accepts either:
+      • A full catalog object ``{"themes": [...], "decks": [...], ...}``
+      • A flat array of card objects (wrapped into a catalog automatically)
+    """
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     if isinstance(data, list):
-        return data
+        return {"themes": [], "decks": [], "decks_themes": [], "cards": data}
     if isinstance(data, dict) and "cards" in data:
-        return data["cards"]
+        return data
     raise ValueError(f"Unrecognised input format in {path}")
 
 
-def save_json(cards: list[dict[str, Any]], path: Path) -> None:
+def save_catalog(catalog: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(cards, f, indent=2, ensure_ascii=False)
+        json.dump(catalog, f, indent=2, ensure_ascii=False)
     tmp.replace(path)
 
 
-def save_checkpoint(cards: list[dict[str, Any]]) -> None:
-    save_json(cards, CHECKPOINT_FILE)
-    log.debug("Checkpoint saved (%d cards)", len(cards))
+def save_checkpoint(catalog: dict[str, Any]) -> None:
+    save_catalog(catalog, CHECKPOINT_FILE)
+    log.debug("Checkpoint saved (%d cards)", len(catalog["cards"]))
 
 
-def load_checkpoint() -> list[dict[str, Any]] | None:
+def load_checkpoint() -> dict[str, Any] | None:
     if CHECKPOINT_FILE.exists():
         log.info("Resuming from checkpoint %s", CHECKPOINT_FILE)
-        return load_cards(CHECKPOINT_FILE)
+        return load_catalog(CHECKPOINT_FILE)
     return None
 
 
@@ -255,10 +260,11 @@ async def _translate_deepl(
 
 
 async def translate_cards(
-    cards: list[dict[str, Any]],
+    catalog: dict[str, Any],
     session: aiohttp.ClientSession,
 ) -> None:
     """Phase 1: fill ``source_text`` for every card that needs it."""
+    cards = catalog["cards"]
     pending = [(i, c) for i, c in enumerate(cards) if needs_translation(c)]
     if not pending:
         log.info("Translation: all cards already translated — skipping")
@@ -287,9 +293,9 @@ async def translate_cards(
 
         processed += len(batch)
         if processed % CHECKPOINT_EVERY < BATCH_SIZE:
-            save_checkpoint(cards)
+            save_checkpoint(catalog)
 
-    save_checkpoint(cards)
+    save_checkpoint(catalog)
     log.info("Translation complete")
 
 
@@ -344,11 +350,12 @@ async def _generate_openai_tts(
 
 
 async def generate_audio(
-    cards: list[dict[str, Any]],
+    catalog: dict[str, Any],
     session: aiohttp.ClientSession,
 ) -> None:
     """Phase 2: generate pronunciation audio for every card that needs it."""
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    cards = catalog["cards"]
 
     pending = [(i, c) for i, c in enumerate(cards) if needs_audio(c)]
     if not pending:
@@ -384,10 +391,10 @@ async def generate_audio(
         completed += 1
         pbar.update(1)
         if completed % CHECKPOINT_EVERY == 0:
-            save_checkpoint(cards)
+            save_checkpoint(catalog)
     pbar.close()
 
-    save_checkpoint(cards)
+    save_checkpoint(catalog)
     log.info("Audio generation complete")
 
 
@@ -475,7 +482,7 @@ async def _fetch_pexels(
 
 
 async def fetch_images(
-    cards: list[dict[str, Any]],
+    catalog: dict[str, Any],
     session: aiohttp.ClientSession,
 ) -> None:
     """Phase 3: fetch images for concrete nouns (optional)."""
@@ -484,6 +491,7 @@ async def fetch_images(
         return
 
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+    cards = catalog["cards"]
 
     pending = [
         (i, c) for i, c in enumerate(cards)
@@ -520,10 +528,10 @@ async def fetch_images(
         completed += 1
         pbar.update(1)
         if completed % CHECKPOINT_EVERY == 0:
-            save_checkpoint(cards)
+            save_checkpoint(catalog)
     pbar.close()
 
-    save_checkpoint(cards)
+    save_checkpoint(catalog)
     log.info("Image fetching complete")
 
 
@@ -532,21 +540,25 @@ async def fetch_images(
 # ═══════════════════════════════════════════════════════════════════════════
 
 async def run(input_path: Path, output_path: Path) -> None:
-    cards = load_checkpoint() or load_cards(input_path)
-    log.info("Loaded %d cards", len(cards))
+    catalog = load_checkpoint() or load_catalog(input_path)
+    cards = catalog["cards"]
+    log.info("Loaded %d cards (%d decks, %d themes)",
+             len(cards), len(catalog.get("decks", [])),
+             len(catalog.get("themes", [])))
 
     connector = aiohttp.TCPConnector(limit=20)
     async with aiohttp.ClientSession(connector=connector) as session:
-        await translate_cards(cards, session)
-        await generate_audio(cards, session)
-        await fetch_images(cards, session)
+        await translate_cards(catalog, session)
+        await generate_audio(catalog, session)
+        await fetch_images(catalog, session)
 
     # Strip internal bookkeeping fields before writing output
     for card in cards:
         card.pop("_concrete", None)
 
-    save_json(cards, output_path)
-    log.info("Saved enriched cards → %s", output_path)
+    catalog["cards"] = cards
+    save_catalog(catalog, output_path)
+    log.info("Saved enriched catalog → %s", output_path)
 
     if CHECKPOINT_FILE.exists():
         CHECKPOINT_FILE.unlink()
@@ -561,6 +573,9 @@ async def run(input_path: Path, output_path: Path) -> None:
     print(f"  Translated:     {translated}")
     print(f"  With audio:     {with_audio}")
     print(f"  With image:     {with_image}")
+    print(f"  Decks:          {len(catalog.get('decks', []))}")
+    print(f"  Themes:         {len(catalog.get('themes', []))}")
+    print(f"  Deck-themes:    {len(catalog.get('decks_themes', []))}")
     print(f"  Output file:    {output_path}")
     print(f"────────────────────────────────────────────────────────\n")
 

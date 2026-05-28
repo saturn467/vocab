@@ -1,50 +1,71 @@
-[
-  {
-    "id": "077c6953-57c4-409b-90c9-d197466e793b",
-    "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
-    "position": 1,
-    "source_text": "",
-    "target_text": "maison",
-    "source_audio_url": null,
-    "target_audio_url": null,
-    "image_url": null,
-    "hint": null,
-    "notes": null
-  },
-  {
-    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
-    "position": 2,
-    "source_text": "",
-    "target_text": "bonheur",
-    "source_audio_url": null,
-    "target_audio_url": null,
-    "image_url": null,
-    "hint": null,
-    "notes": null
-  },
-  {
-    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-    "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
-    "position": 3,
-    "source_text": "",
-    "target_text": "chat",
-    "source_audio_url": null,
-    "target_audio_url": null,
-    "image_url": null,
-    "hint": null,
-    "notes": null
-  },
-  {
-    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-    "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
-    "position": 4,
-    "source_text": "",
-    "target_text": "énormément",
-    "source_audio_url": null,
-    "target_audio_url": null,
-    "image_url": null,
-    "hint": null,
-    "notes": null
-  }
-]
+{
+  "themes": [
+    {"id": "t1-food", "name": "Food & Dining"},
+    {"id": "t2-home", "name": "Home & Daily Life"}
+  ],
+  "decks": [
+    {
+      "id": "4444de83-6bbd-477c-842b-315d249728ee",
+      "slug": "household-items-a2",
+      "name": "Household Items",
+      "description": "A2-level vocabulary deck. Themes: Home & Daily Life, Food & Dining. Contains 4 words.",
+      "source_language_code": "en",
+      "target_language_code": "fr",
+      "level": "A2"
+    }
+  ],
+  "decks_themes": [
+    {"deck_id": "4444de83-6bbd-477c-842b-315d249728ee", "theme_id": "t2-home"},
+    {"deck_id": "4444de83-6bbd-477c-842b-315d249728ee", "theme_id": "t1-food"}
+  ],
+  "cards": [
+    {
+      "id": "077c6953-57c4-409b-90c9-d197466e793b",
+      "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
+      "position": 1,
+      "source_text": "",
+      "target_text": "maison",
+      "source_audio_url": null,
+      "target_audio_url": null,
+      "image_url": null,
+      "hint": null,
+      "notes": null
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
+      "position": 2,
+      "source_text": "",
+      "target_text": "bonheur",
+      "source_audio_url": null,
+      "target_audio_url": null,
+      "image_url": null,
+      "hint": null,
+      "notes": null
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
+      "position": 3,
+      "source_text": "",
+      "target_text": "chat",
+      "source_audio_url": null,
+      "target_audio_url": null,
+      "image_url": null,
+      "hint": null,
+      "notes": null
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "deck_id": "4444de83-6bbd-477c-842b-315d249728ee",
+      "position": 4,
+      "source_text": "",
+      "target_text": "énormément",
+      "source_audio_url": null,
+      "target_audio_url": null,
+      "image_url": null,
+      "hint": null,
+      "notes": null
+    }
+  ]
+}

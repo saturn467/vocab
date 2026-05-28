@@ -78,15 +78,24 @@ python enrich.py -v --input cards.json --output enriched.json
 
 The input JSON file can be either:
 
-1. A flat array of card objects:
+1. The full catalog object from the taxonomer (recommended):
+```json
+{
+  "themes": [...],
+  "decks": [{"id": "...", "name": "...", "level": "A2", ...}],
+  "decks_themes": [{"deck_id": "...", "theme_id": "..."}],
+  "cards": [{"id": "...", "target_text": "maison", "source_text": "", ...}]
+}
+```
+
+2. A flat array of card objects (decks/themes will be empty in the output):
 ```json
 [{"id": "...", "target_text": "maison", "source_text": "", ...}]
 ```
 
-2. An object with a `"cards"` key (e.g., the `catalog_seed.json` from the taxonomer):
-```json
-{"cards": [{"id": "...", "target_text": "maison", "source_text": "", ...}]}
-```
+The output preserves the complete catalog structure — `themes`, `decks`,
+`decks_themes`, and enriched `cards` — so the result is ready for database
+seeding without needing to reassemble from separate files.
 
 ### Resumability
 
