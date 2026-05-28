@@ -131,19 +131,23 @@ def needs_image(card: dict[str, Any]) -> bool:
     return True
 
 
-def _validate_config() -> None:
-    """Exit early if required API keys are missing."""
+def _validate_config(phases: set[str]) -> None:
+    """Exit early if required API keys are missing for the requested phases."""
+    run_all = "all" in phases
     errors: list[str] = []
-    if TRANSLATION_PROVIDER == "openai" and not OPENAI_API_KEY:
-        errors.append("OPENAI_API_KEY is required when TRANSLATION_PROVIDER=openai")
-    if TRANSLATION_PROVIDER == "deepl" and not DEEPL_API_KEY:
-        errors.append("DEEPL_API_KEY is required when TRANSLATION_PROVIDER=deepl")
-    if AUDIO_PROVIDER == "openai" and not OPENAI_API_KEY:
-        errors.append("OPENAI_API_KEY is required when AUDIO_PROVIDER=openai")
-    if IMAGE_PROVIDER == "unsplash" and not UNSPLASH_ACCESS_KEY:
-        errors.append("UNSPLASH_ACCESS_KEY is required when IMAGE_PROVIDER=unsplash")
-    if IMAGE_PROVIDER == "pexels" and not PEXELS_API_KEY:
-        errors.append("PEXELS_API_KEY is required when IMAGE_PROVIDER=pexels")
+    if (run_all or "translate" in phases):
+        if TRANSLATION_PROVIDER == "openai" and not OPENAI_API_KEY:
+            errors.append("OPENAI_API_KEY is required when TRANSLATION_PROVIDER=openai")
+        if TRANSLATION_PROVIDER == "deepl" and not DEEPL_API_KEY:
+            errors.append("DEEPL_API_KEY is required when TRANSLATION_PROVIDER=deepl")
+    if (run_all or "audio" in phases):
+        if AUDIO_PROVIDER == "openai" and not OPENAI_API_KEY:
+            errors.append("OPENAI_API_KEY is required when AUDIO_PROVIDER=openai")
+    if (run_all or "images" in phases):
+        if IMAGE_PROVIDER == "unsplash" and not UNSPLASH_ACCESS_KEY:
+            errors.append("UNSPLASH_ACCESS_KEY is required when IMAGE_PROVIDER=unsplash")
+        if IMAGE_PROVIDER == "pexels" and not PEXELS_API_KEY:
+            errors.append("PEXELS_API_KEY is required when IMAGE_PROVIDER=pexels")
     if errors:
         for e in errors:
             log.error(e)
@@ -539,7 +543,15 @@ async def fetch_images(
 #  PIPELINE
 # ═══════════════════════════════════════════════════════════════════════════
 
-async def run(input_path: Path, output_path: Path) -> None:
+VALID_PHASES = {"all", "translate", "audio", "images"}
+
+
+async def run(
+    input_path: Path,
+    output_path: Path,
+    phases: set[str] | None = None,
+) -> None:
+    run_all = phases is None or "all" in phases
     catalog = load_checkpoint() or load_catalog(input_path)
     cards = catalog["cards"]
     log.info("Loaded %d cards (%d decks, %d themes)",
@@ -548,9 +560,12 @@ async def run(input_path: Path, output_path: Path) -> None:
 
     connector = aiohttp.TCPConnector(limit=20)
     async with aiohttp.ClientSession(connector=connector) as session:
-        await translate_cards(catalog, session)
-        await generate_audio(catalog, session)
-        await fetch_images(catalog, session)
+        if run_all or "translate" in phases:
+            await translate_cards(catalog, session)
+        if run_all or "audio" in phases:
+            await generate_audio(catalog, session)
+        if run_all or "images" in phases:
+            await fetch_images(catalog, session)
 
     # Strip internal bookkeeping fields before writing output
     for card in cards:
@@ -605,7 +620,21 @@ def main() -> None:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--phase",
+        action="append",
+        choices=sorted(VALID_PHASES),
+        default=None,
+        help=(
+            "Run only specific phase(s). Can be repeated: "
+            "--phase translate --phase audio. "
+            "Choices: all, translate, audio, images. "
+            "Default: all."
+        ),
+    )
     args = parser.parse_args()
+
+    phases: set[str] = set(args.phase) if args.phase else {"all"}
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -613,12 +642,14 @@ def main() -> None:
         datefmt="%H:%M:%S",
     )
 
-    _validate_config()
+    _validate_config(phases)
 
     log.info("Providers — translation: %s  audio: %s  images: %s",
              TRANSLATION_PROVIDER, AUDIO_PROVIDER, IMAGE_PROVIDER)
+    if "all" not in phases:
+        log.info("Running phases: %s", ", ".join(sorted(phases)))
 
-    asyncio.run(run(args.input, args.output))
+    asyncio.run(run(args.input, args.output, phases))
 
 
 if __name__ == "__main__":
