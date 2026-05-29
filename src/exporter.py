@@ -82,11 +82,7 @@ class Exporter:
                     "position": position,
                     "source_text": "",
                     "target_text": word,
-                    "source_audio_url": None,
                     "target_audio_url": None,
-                    "image_url": None,
-                    "hint": None,
-                    "notes": None,
                 })
 
         catalog = {
