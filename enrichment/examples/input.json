@@ -25,11 +25,7 @@
       "position": 1,
       "source_text": "",
       "target_text": "maison",
-      "source_audio_url": null,
-      "target_audio_url": null,
-      "image_url": null,
-      "hint": null,
-      "notes": null
+      "target_audio_url": null
     },
     {
       "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -37,11 +33,7 @@
       "position": 2,
       "source_text": "",
       "target_text": "bonheur",
-      "source_audio_url": null,
-      "target_audio_url": null,
-      "image_url": null,
-      "hint": null,
-      "notes": null
+      "target_audio_url": null
     },
     {
       "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
@@ -49,11 +41,7 @@
       "position": 3,
       "source_text": "",
       "target_text": "chat",
-      "source_audio_url": null,
-      "target_audio_url": null,
-      "image_url": null,
-      "hint": null,
-      "notes": null
+      "target_audio_url": null
     },
     {
       "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
@@ -61,11 +49,7 @@
       "position": 4,
       "source_text": "",
       "target_text": "énormément",
-      "source_audio_url": null,
-      "target_audio_url": null,
-      "image_url": null,
-      "hint": null,
-      "notes": null
+      "target_audio_url": null
     }
   ]
 }

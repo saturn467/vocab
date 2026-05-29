@@ -567,9 +567,11 @@ async def run(
         if run_all or "images" in phases:
             await fetch_images(catalog, session)
 
-    # Strip internal bookkeeping fields before writing output
+    # Strip internal bookkeeping and unused fields before writing output
+    _STRIP_KEYS = {"_concrete", "source_audio_url", "image_url", "hint", "notes"}
     for card in cards:
-        card.pop("_concrete", None)
+        for key in _STRIP_KEYS:
+            card.pop(key, None)
 
     catalog["cards"] = cards
     save_catalog(catalog, output_path)
